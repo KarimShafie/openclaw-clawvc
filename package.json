@@ -11,9 +11,11 @@
   },
   "dependencies": {
     "@sinclair/typebox": "^0.34.0",
-    "chokidar": "^4.0.0"
+    "chokidar": "^4.0.0",
+    "json5": "^2.2.3"
   },
   "devDependencies": {
+    "@types/json5": "^0.0.30",
     "@types/node": "^25.5.2",
     "typescript": "^5.7.0"
   },

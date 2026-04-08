@@ -5,7 +5,6 @@ const IGNORE_PATTERNS = [
     /(^|[/\\])node_modules([/\\]|$)/,
     /(^|[/\\])__pycache__([/\\]|$)/,
     /(^|[/\\])venv([/\\]|$)/,
-    /(^|[/\\])\.openclaw([/\\]|$)/,
     /(^|[/\\])uploads([/\\]|$)/,
     /(^|[/\\])cache([/\\]|$)/,
     /\.(sqlite|sqlite-journal|tmp|swp|pyc|log)$/,

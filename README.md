@@ -49,6 +49,7 @@ In your `openclaw.json` under `plugins.entries.clawvc`:
 
 - **git** installed and in PATH
 - OpenClaw gateway `>=2026.4.4`
+- Tested on: Linux, macOS. Windows should work (chokidar handles it transparently) but is not yet verified — please file an issue if you hit problems.
 
 ## How it works
 

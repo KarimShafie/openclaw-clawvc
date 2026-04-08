@@ -1,16 +1,21 @@
 import { readFile, writeFile, rename, unlink, access, constants } from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import JSON5 from "json5";
 
 const PLAN_BACKUP_NAME = ".clawvc-plan-backup.json";
 const TOOLS_DENY = ["write", "edit", "apply_patch", "exec", "process"];
 
+function openclawHome(): string {
+  return process.env.OPENCLAW_HOME || path.join(os.homedir(), ".openclaw");
+}
+
 function resolveConfigPath(): string {
-  return path.join(os.homedir(), ".openclaw", "openclaw.json");
+  return path.join(openclawHome(), "openclaw.json");
 }
 
 function resolveBackupPath(): string {
-  return path.join(os.homedir(), ".openclaw", PLAN_BACKUP_NAME);
+  return path.join(openclawHome(), PLAN_BACKUP_NAME);
 }
 
 async function fileExists(filePath: string): Promise<boolean> {
@@ -44,11 +49,11 @@ export async function planOn(): Promise<{
   }
 
   try {
-    // Read current config
+    // Read current config (raw string preserved for backup)
     const raw = await readFile(configPath, "utf-8");
-    const config = JSON.parse(raw);
+    const config = JSON5.parse(raw);
 
-    // Backup the clean config
+    // Backup the clean config (raw string, preserves comments)
     await writeFile(backupPath, raw, "utf-8");
 
     // Add tools.deny
@@ -57,7 +62,7 @@ export async function planOn(): Promise<{
 
     // Atomic write: tmp file → rename
     const tmpPath = configPath + ".clawvc-tmp";
-    await writeFile(tmpPath, JSON.stringify(config, null, 2), "utf-8");
+    await writeFile(tmpPath, JSON5.stringify(config, null, 2), "utf-8");
     await rename(tmpPath, configPath);
 
     return {

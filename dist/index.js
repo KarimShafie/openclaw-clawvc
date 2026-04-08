@@ -1,19 +1,35 @@
 import { Type } from "@sinclair/typebox";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { checkRepoState, initRepo, gitLog, gitDiff, gitShow, gitUndo, gitStatus, gitLastCommit, } from "./git.js";
+import JSON5 from "json5";
+import { checkRepoState, initRepo, gitLog, gitDiff, gitShow, gitUndo, gitStatus, gitLastCommit, gitFileCount, } from "./git.js";
 import { start as startWatcher, isRunning } from "./watcher.js";
 import { planOn, planOff, planStatus } from "./plan.js";
+// --- Helpers ---
+function openclawHome() {
+    return process.env.OPENCLAW_HOME || path.join(os.homedir(), ".openclaw");
+}
 // --- Workspace discovery ---
 function resolveWorkspace(pluginConfig) {
     // Layer 1: plugin config
     if (pluginConfig?.workspace && typeof pluginConfig.workspace === "string") {
         return pluginConfig.workspace;
     }
-    // Layer 2 + 3: fall back to default
-    // In a real plugin, we'd read agents.defaults.workspace from the gateway config.
-    // For now, use the standard default.
-    return path.join(os.homedir(), ".openclaw", "workspace");
+    // Layer 2: read agents.defaults.workspace from openclaw.json
+    try {
+        const configPath = path.join(openclawHome(), "openclaw.json");
+        const raw = readFileSync(configPath, "utf-8");
+        const config = JSON5.parse(raw);
+        const ws = config?.agents?.defaults?.workspace;
+        if (ws && typeof ws === "string")
+            return ws;
+    }
+    catch {
+        // Config missing or corrupt — fall through to default
+    }
+    // Layer 3: default
+    return path.join(openclawHome(), "workspace");
 }
 // --- Helpers ---
 function textResult(text) {
@@ -56,6 +72,16 @@ export default {
         catch (err) {
             console.error(`[clawvc] Pre-flight error: ${err instanceof Error ? err.message : String(err)}`);
             return;
+        }
+        // --- File count warning ---
+        try {
+            const fileCount = await gitFileCount(workspace);
+            if (fileCount > 10000) {
+                console.warn(`[clawvc] Large workspace (${fileCount} files) — consider adding excludes`);
+            }
+        }
+        catch {
+            // Non-critical, continue
         }
         // --- Auto-start watcher ---
         if (autoWatch) {
