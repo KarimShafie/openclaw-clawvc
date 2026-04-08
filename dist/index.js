@@ -31,7 +31,6 @@ function resolveWorkspace(pluginConfig) {
     // Layer 3: default
     return path.join(openclawHome(), "workspace");
 }
-// --- Helpers ---
 function textResult(text) {
     return { content: [{ type: "text", text }] };
 }

@@ -15,7 +15,7 @@ import {
   gitLastCommit,
   gitFileCount,
 } from "./git.js";
-import { start as startWatcher, stop as stopWatcher, isRunning } from "./watcher.js";
+import { start as startWatcher, isRunning } from "./watcher.js";
 import { planOn, planOff, planStatus } from "./plan.js";
 
 // --- Helpers ---
@@ -46,8 +46,6 @@ function resolveWorkspace(pluginConfig?: Record<string, unknown>): string {
   // Layer 3: default
   return path.join(openclawHome(), "workspace");
 }
-
-// --- Helpers ---
 
 function textResult(text: string) {
   return { content: [{ type: "text" as const, text }] };
