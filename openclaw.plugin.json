@@ -9,19 +9,7 @@
     "properties": {
       "workspace": {
         "type": "string",
-        "description": "Workspace path to watch (default: resolved from agents.defaults.workspace or ~/.openclaw/workspace)"
-      },
-      "autoWatch": {
-        "type": "boolean",
-        "description": "Auto-start file watcher on gateway startup",
-        "default": true
-      },
-      "debounceMs": {
-        "type": "integer",
-        "description": "Milliseconds to wait after last file change before committing",
-        "default": 3000,
-        "minimum": 500,
-        "maximum": 30000
+        "description": "Workspace path (default: resolved from agents.defaults.workspace or ~/.openclaw/workspace)"
       }
     }
   }

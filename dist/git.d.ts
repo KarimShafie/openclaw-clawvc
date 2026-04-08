@@ -14,6 +14,7 @@ export declare function gitStatus(workspace: string): Promise<GitResult>;
 export declare function gitLastCommit(workspace: string): Promise<GitResult>;
 export declare function gitAddAll(workspace: string): Promise<GitResult>;
 export declare function gitIsClean(workspace: string): Promise<boolean>;
+export declare function gitStagedFileNames(workspace: string): Promise<string[]>;
 export declare function gitCommit(workspace: string, message: string): Promise<GitResult>;
 export declare function gitFileCount(workspace: string): Promise<number>;
 export {};

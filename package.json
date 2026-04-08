@@ -1,23 +1,51 @@
 {
   "name": "openclaw-clawvc",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
-  "description": "Git-based workspace version control for OpenClaw — auto-commit, undo, and plan mode",
+  "description": "Git-based workspace version control for OpenClaw — auto-commit on agent turns, undo, and plan mode",
   "license": "MIT",
   "main": "./dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KarimShafie/openclaw-clawvc.git"
+  },
+  "homepage": "https://github.com/KarimShafie/openclaw-clawvc#readme",
+  "keywords": [
+    "openclaw",
+    "plugin",
+    "git",
+    "version-control",
+    "auto-commit",
+    "undo",
+    "plan-mode"
+  ],
+  "engines": {
+    "node": ">=22.16.0"
+  },
+  "files": [
+    "dist/",
+    "skills/",
+    "openclaw.plugin.json",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
   "scripts": {
     "build": "tsc",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@sinclair/typebox": "^0.34.0",
-    "chokidar": "^4.0.0",
     "json5": "^2.2.3"
   },
   "devDependencies": {
     "@types/json5": "^0.0.30",
     "@types/node": "^25.5.2",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^3.1.0"
   },
   "openclaw": {
     "extensions": [

@@ -4,13 +4,12 @@ import path from "node:path";
 import os from "node:os";
 import JSON5 from "json5";
 import { checkRepoState, initRepo, gitLog, gitDiff, gitShow, gitUndo, gitStatus, gitLastCommit, gitFileCount, } from "./git.js";
-import { start as startWatcher, isRunning } from "./watcher.js";
+import { commitWorkspace } from "./commit.js";
 import { planOn, planOff, planStatus } from "./plan.js";
 // --- Helpers ---
 function openclawHome() {
     return process.env.OPENCLAW_HOME || path.join(os.homedir(), ".openclaw");
 }
-// --- Workspace discovery ---
 function resolveWorkspace(pluginConfig) {
     // Layer 1: plugin config
     if (pluginConfig?.workspace && typeof pluginConfig.workspace === "string") {
@@ -44,8 +43,6 @@ export default {
     async register(api) {
         const config = api.config ?? {};
         const workspace = resolveWorkspace(config);
-        const debounceMs = typeof config.debounceMs === "number" ? config.debounceMs : 3000;
-        const autoWatch = config.autoWatch !== false;
         // --- Git pre-flight ---
         try {
             const state = await checkRepoState(workspace);
@@ -82,15 +79,16 @@ export default {
         catch {
             // Non-critical, continue
         }
-        // --- Auto-start watcher ---
-        if (autoWatch) {
+        // --- Hook: auto-commit after each agent turn ---
+        api.registerHook("agent_end", async (event) => {
             try {
-                startWatcher(workspace, { debounceMs });
+                const failed = event.success === false;
+                await commitWorkspace(workspace, { failed });
             }
             catch (err) {
-                console.error(`[clawvc] Failed to start watcher: ${err instanceof Error ? err.message : String(err)}`);
+                console.error("[clawvc] agent_end hook error:", err instanceof Error ? err.message : String(err));
             }
-        }
+        });
         // --- Register tools ---
         api.registerTool({
             name: "clawvc_log",
@@ -170,16 +168,14 @@ export default {
         });
         api.registerTool({
             name: "clawvc_status",
-            description: "Show clawvc status: whether the file watcher is running, plan mode state, and the last commit.",
+            description: "Show clawvc status: plan mode state and the last commit.",
             parameters: Type.Object({}),
             async execute() {
                 try {
-                    const watching = isRunning();
                     const plan = await planStatus();
                     const last = await gitLastCommit(workspace);
                     const status = await gitStatus(workspace);
                     const lines = [
-                        `Watcher: ${watching ? "RUNNING" : "STOPPED"}`,
                         `Plan mode: ${plan.active ? "ON (read-only)" : "OFF"}`,
                         "",
                         `Last commit: ${last.ok ? last.output : "none"}`,
@@ -229,6 +225,6 @@ export default {
                 }
             },
         });
-        console.log(`[clawvc] Plugin registered (workspace: ${workspace}, autoWatch: ${autoWatch})`);
+        console.log(`[clawvc] Plugin registered (workspace: ${workspace})`);
     },
 };

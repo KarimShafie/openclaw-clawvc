@@ -41,7 +41,10 @@ export async function initRepo(workspace) {
     const initResult = await git(workspace, ["init"]);
     if (!initResult.ok)
         return initResult;
-    return gitCommit(workspace, "clawvc: initial workspace snapshot");
+    // Stage any existing files
+    await gitAddAll(workspace);
+    // Use --allow-empty so init succeeds even in an empty workspace
+    return git(workspace, ["commit", "--allow-empty", "-m", "clawvc: initial workspace snapshot"]);
 }
 // --- Operations ---
 export async function gitLog(workspace, count = 20) {
@@ -89,6 +92,12 @@ export async function gitIsClean(workspace) {
         return status.ok && status.output === "";
     }
     return false;
+}
+export async function gitStagedFileNames(workspace) {
+    const result = await git(workspace, ["diff", "--cached", "--name-only"]);
+    if (!result.ok || !result.output)
+        return [];
+    return result.output.split("\n").filter(Boolean);
 }
 export async function gitCommit(workspace, message) {
     return git(workspace, ["commit", "-m", message]);

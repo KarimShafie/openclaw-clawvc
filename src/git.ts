@@ -62,7 +62,12 @@ export async function checkRepoState(workspace: string): Promise<RepoState> {
 export async function initRepo(workspace: string): Promise<GitResult> {
   const initResult = await git(workspace, ["init"]);
   if (!initResult.ok) return initResult;
-  return gitCommit(workspace, "clawvc: initial workspace snapshot");
+
+  // Stage any existing files
+  await gitAddAll(workspace);
+
+  // Use --allow-empty so init succeeds even in an empty workspace
+  return git(workspace, ["commit", "--allow-empty", "-m", "clawvc: initial workspace snapshot"]);
 }
 
 // --- Operations ---
@@ -133,6 +138,14 @@ export async function gitIsClean(workspace: string): Promise<boolean> {
     return status.ok && status.output === "";
   }
   return false;
+}
+
+export async function gitStagedFileNames(
+  workspace: string,
+): Promise<string[]> {
+  const result = await git(workspace, ["diff", "--cached", "--name-only"]);
+  if (!result.ok || !result.output) return [];
+  return result.output.split("\n").filter(Boolean);
 }
 
 export async function gitCommit(
