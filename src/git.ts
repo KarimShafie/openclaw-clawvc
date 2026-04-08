@@ -1,0 +1,154 @@
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import { access, constants } from "node:fs/promises";
+import path from "node:path";
+
+const exec = promisify(execFile);
+
+interface GitResult {
+  ok: boolean;
+  output: string;
+  error?: string;
+}
+
+const GIT_IDENTITY = ["-c", "user.name=clawvc", "-c", "user.email=clawvc@local"];
+
+async function git(
+  workspace: string,
+  args: string[],
+): Promise<GitResult> {
+  try {
+    const { stdout, stderr } = await exec(
+      "git",
+      [...GIT_IDENTITY, "-C", workspace, ...args],
+      { maxBuffer: 1024 * 1024 },
+    );
+    return { ok: true, output: stdout.trim() };
+  } catch (err: unknown) {
+    const message =
+      err instanceof Error ? (err as Error & { stderr?: string }).stderr || err.message : String(err);
+    return { ok: false, output: "", error: message.trim() };
+  }
+}
+
+// --- Pre-flight ---
+
+export type RepoState = "no-git" | "empty" | "clawvc-owned" | "user-owned";
+
+export async function checkRepoState(workspace: string): Promise<RepoState> {
+  const gitDir = path.join(workspace, ".git");
+  try {
+    await access(gitDir, constants.F_OK);
+  } catch {
+    return "no-git";
+  }
+
+  const result = await git(workspace, ["rev-list", "--count", "HEAD"]);
+  if (!result.ok) return "empty"; // HEAD doesn't exist → zero commits
+
+  const count = parseInt(result.output, 10);
+  if (count === 0) return "empty";
+
+  // Check if commits are ours
+  const authorResult = await git(workspace, [
+    "log", "--all", "--format=%ae", "--max-count=1",
+  ]);
+  if (authorResult.ok && authorResult.output === "clawvc@local") {
+    return "clawvc-owned";
+  }
+  return "user-owned";
+}
+
+export async function initRepo(workspace: string): Promise<GitResult> {
+  const initResult = await git(workspace, ["init"]);
+  if (!initResult.ok) return initResult;
+  return gitCommit(workspace, "clawvc: initial workspace snapshot");
+}
+
+// --- Operations ---
+
+export async function gitLog(
+  workspace: string,
+  count = 20,
+): Promise<GitResult> {
+  return git(workspace, [
+    "log",
+    `--max-count=${count}`,
+    "--pretty=format:%h %s (%ar)",
+  ]);
+}
+
+export async function gitDiff(
+  workspace: string,
+  n = 1,
+): Promise<GitResult> {
+  return git(workspace, ["diff", `HEAD~${n}`]);
+}
+
+export async function gitShow(
+  workspace: string,
+  n = 1,
+): Promise<GitResult> {
+  return git(workspace, ["show", `HEAD~${n}`, "--stat", "--patch"]);
+}
+
+export async function gitUndo(
+  workspace: string,
+  n = 1,
+): Promise<GitResult> {
+  const ref = n === 1 ? "HEAD" : `HEAD~${n - 1}`;
+  const result = await git(workspace, ["revert", ref, "--no-edit"]);
+
+  if (!result.ok) {
+    // Abort the failed revert to leave the repo clean
+    await git(workspace, ["revert", "--abort"]);
+    return {
+      ok: false,
+      output: "",
+      error:
+        "Couldn't cleanly undo — there are newer changes on top. " +
+        `Run clawvc_show to see the change, or manually fix.`,
+    };
+  }
+  return result;
+}
+
+export async function gitStatus(workspace: string): Promise<GitResult> {
+  return git(workspace, ["status", "--short"]);
+}
+
+export async function gitLastCommit(workspace: string): Promise<GitResult> {
+  return git(workspace, ["log", "-1", "--pretty=format:%h %s (%ar)"]);
+}
+
+export async function gitAddAll(workspace: string): Promise<GitResult> {
+  return git(workspace, ["add", "-A"]);
+}
+
+export async function gitIsClean(workspace: string): Promise<boolean> {
+  const result = await git(workspace, ["diff", "--cached", "--quiet"]);
+  if (result.ok) {
+    // Also check for untracked
+    const status = await git(workspace, ["status", "--porcelain"]);
+    return status.ok && status.output === "";
+  }
+  return false;
+}
+
+export async function gitCommit(
+  workspace: string,
+  message: string,
+): Promise<GitResult> {
+  return git(workspace, ["commit", "-m", message]);
+}
+
+export async function gitFileCount(workspace: string): Promise<number> {
+  const result = await git(workspace, [
+    "ls-files",
+    "--others",
+    "--cached",
+    "--exclude-standard",
+  ]);
+  if (!result.ok) return 0;
+  return result.output.split("\n").filter(Boolean).length;
+}
