@@ -18,7 +18,7 @@ async function git(
   args: string[],
 ): Promise<GitResult> {
   try {
-    const { stdout, stderr } = await exec(
+    const { stdout } = await exec(
       "git",
       [...GIT_IDENTITY, "-C", workspace, ...args],
       { maxBuffer: 1024 * 1024 },

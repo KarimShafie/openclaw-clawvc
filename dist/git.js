@@ -6,7 +6,7 @@ const exec = promisify(execFile);
 const GIT_IDENTITY = ["-c", "user.name=clawvc", "-c", "user.email=clawvc@local"];
 async function git(workspace, args) {
     try {
-        const { stdout, stderr } = await exec("git", [...GIT_IDENTITY, "-C", workspace, ...args], { maxBuffer: 1024 * 1024 });
+        const { stdout } = await exec("git", [...GIT_IDENTITY, "-C", workspace, ...args], { maxBuffer: 1024 * 1024 });
         return { ok: true, output: stdout.trim() };
     }
     catch (err) {

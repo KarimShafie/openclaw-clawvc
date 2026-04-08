@@ -84,7 +84,7 @@ export default {
       const state = await checkRepoState(workspace);
       switch (state) {
         case "no-git":
-        case "empty":
+        case "empty": {
           console.log(`[clawvc] Initializing git repo in ${workspace}`);
           const initResult = await initRepo(workspace);
           if (!initResult.ok) {
@@ -92,6 +92,7 @@ export default {
             return;
           }
           break;
+        }
         case "clawvc-owned":
           // Our repo, good to go
           break;

@@ -3,7 +3,7 @@ import path from "node:path";
 import os from "node:os";
 import JSON5 from "json5";
 const PLAN_BACKUP_NAME = ".clawvc-plan-backup.json";
-const TOOLS_DENY = ["write", "edit", "apply_patch", "exec", "process"];
+const TOOLS_DENY = ["write", "edit", "apply_patch", "exec", "process", "browser", "cron", "message"];
 function openclawHome() {
     return process.env.OPENCLAW_HOME || path.join(os.homedir(), ".openclaw");
 }

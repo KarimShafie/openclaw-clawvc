@@ -12,7 +12,7 @@ metadata:
 
 # ClawVC — Workspace Version Control
 
-ClawVC automatically tracks file changes in your workspace with git. Every time files are modified, a snapshot is committed after a short debounce period.
+ClawVC automatically commits workspace changes after each agent turn using OpenClaw's `agent_end` hook. Only changes made during agent activity are captured — external file changes (cron, polling, daemons) are ignored.
 
 ## When to use these tools
 
@@ -29,7 +29,7 @@ ClawVC automatically tracks file changes in your workspace with git. Every time 
 | `clawvc_diff` | See what changed N commits ago |
 | `clawvc_show` | Full diff with file stats |
 | `clawvc_undo` | Revert a specific change |
-| `clawvc_status` | Check watcher and plan mode state |
+| `clawvc_status` | Check plan mode state and last commit |
 | `clawvc_plan` | Enable/disable read-only mode |
 
 ## Plan mode
